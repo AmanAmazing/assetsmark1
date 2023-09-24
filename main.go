@@ -7,9 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
@@ -24,6 +26,57 @@ type SignUser struct{
 
 var Db *sql.DB
 var workingDirectory string
+
+
+var tokenAuth *jwtauth.JWTAuth
+
+type Credentials struct {
+    Email string `json:"email"`
+    Password string `json:"password"`
+
+}
+
+func LoginPost(w http.ResponseWriter, r *http.Request){
+    fmt.Println("entered LoginPost")
+    var credentials Credentials
+    credentials.Email = r.FormValue("email")
+    credentials.Password = r.FormValue("password")
+    fmt.Println("reached the database section")
+    fmt.Println(credentials.Email)
+    fmt.Println(credentials.Password)
+    var hashFromDatabase string 
+    sqlQuery := `SELECT hash FROM users WHERE email=$1;`
+    row := Db.QueryRow(sqlQuery,credentials.Email)
+    switch err := row.Scan(&hashFromDatabase);err{
+    case sql.ErrNoRows:
+        fmt.Println("hashFromDatabase: ",hashFromDatabase)
+        fmt.Println("password from form: ",credentials.Password)
+        test23,_:= hashPassword(credentials.Password) 
+        fmt.Println("Password from form hashed: ",test23 )
+
+        w.WriteHeader(http.StatusNotFound)
+        return 
+    } 
+    fmt.Println("Entered hashing password stage")
+    fmt.Println(hashFromDatabase)
+    if checkPasswordsMatch(hashFromDatabase, credentials.Password) == false{
+        w.WriteHeader(http.StatusUnauthorized)
+        return
+    }
+    _,tokenString, _ := tokenAuth.Encode(map[string]interface{}{"email":credentials.Email})
+    
+    http.SetCookie(w, &http.Cookie{
+        HttpOnly: true,
+        Expires: time.Now().Add(7*24*time.Hour),
+        //uncomment below for https: 
+        // Secure:true, 
+        Name: "jwt",
+        Value: tokenString,
+    })
+
+    http.Redirect(w,r, "/admin",http.StatusSeeOther)
+
+}
 
 func init(){
     err := godotenv.Load(".env")
@@ -47,7 +100,9 @@ func init(){
     if err != nil {
         log.Fatalln(err)
     }
-
+    
+    // jwt stuff 
+    tokenAuth = jwtauth.New("HS256", []byte("secretKey"),nil)
 
     log.Println("Connected")
 }
@@ -60,7 +115,20 @@ func main() {
     r.Get("/login",login)
     r.Get("/signup",signUp)
     r.Post("/signup",signUpPost)
+    
+    r.Post("/login",LoginPost)
 
+    // protected routes 
+    r.Group(func(r chi.Router){
+        // seek, verify and validate JWT tokens 
+        r.Use(jwtauth.Verifier(tokenAuth))
+        r.Use(jwtauth.Authenticator)
+
+        r.Get("/admin", func(w http.ResponseWriter, r *http.Request){
+            _, claims, _ := jwtauth.FromContext(r.Context())
+            w.Write([]byte(fmt.Sprint("protected area. Hi",claims["email"])))
+        })
+    })
     log.Fatal(http.ListenAndServe(":3000", r))
 }
 
