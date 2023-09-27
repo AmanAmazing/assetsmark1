@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -26,7 +25,6 @@ func SignUp(w http.ResponseWriter,r *http.Request){
 func SignUpPost(w http.ResponseWriter,r *http.Request){
     user := models.User{} 
     sqlQuery := `SELECT email FROM users WHERE email=$1;`
-    fmt.Println("checking email: ",r.FormValue("email"))
     row := models.DB.QueryRow(sqlQuery,r.FormValue("email"))
     switch err := row.Scan(&user.Email);err{
     case sql.ErrNoRows:
@@ -38,8 +36,7 @@ func SignUpPost(w http.ResponseWriter,r *http.Request){
             log.Fatal("failed to hash password") // need to complete this section
             return
         }
-        fmt.Println(user)
-        signUpQuery := `INSERT INTO users (first_name,last_name,hash,email) values ($1,$2,$3,$4)` 
+        signUpQuery := `INSERT INTO users (firstName,lastName,hash,email) values ($1,$2,$3,$4)` 
         _, err = models.DB.Exec(signUpQuery,user.FirstName,user.Surname,user.Password,user.Email)
         if err !=nil{
             w.WriteHeader(http.StatusBadRequest)
@@ -74,8 +71,6 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
         w.WriteHeader(http.StatusNotFound)
         return 
     } 
-    fmt.Println("Entered hashing password stage")
-    fmt.Println(hashFromDatabase)
     if helper.CheckPasswordsMatch(hashFromDatabase, credentials.Password) == false{
         w.WriteHeader(http.StatusUnauthorized)
         return

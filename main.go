@@ -37,6 +37,11 @@ func init(){
     if err != nil {
         panic(err)
     }
+    // checking if all the user tables exist 
+    err = models.CreateTables()
+    if err != nil {
+        log.Fatal(err)
+    }
     // working directory 
     workingDirectory, err = os.Getwd()
     if err != nil {
