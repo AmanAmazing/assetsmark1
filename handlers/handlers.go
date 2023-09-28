@@ -63,10 +63,13 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
     var credentials models.User
     credentials.Email = r.FormValue("email")
     credentials.Password = r.FormValue("password")
+    // variables from database
     var hashFromDatabase string 
-    sqlQuery := `SELECT hash FROM users WHERE email=$1;`
+    var idFromDatabase string
+
+    sqlQuery := `SELECT hash,userId FROM users WHERE email=$1;`
     row := models.DB.QueryRow(sqlQuery,credentials.Email)
-    switch err := row.Scan(&hashFromDatabase);err{
+    switch err := row.Scan(&hashFromDatabase,&idFromDatabase);err{
     case sql.ErrNoRows:
         w.WriteHeader(http.StatusNotFound)
         return 
@@ -75,7 +78,7 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
         w.WriteHeader(http.StatusUnauthorized)
         return
     }
-    _,tokenString, _ := models.TokenAuth.Encode(map[string]interface{}{"email":credentials.Email})
+    _,tokenString, _ := models.TokenAuth.Encode(map[string]interface{}{"id":idFromDatabase})
     
     http.SetCookie(w, &http.Cookie{
         HttpOnly: true,
@@ -90,3 +93,8 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
 
 }
 
+
+func Organisations(w http.ResponseWriter, r *http.Request){
+    tmpl := template.Must(template.ParseFiles("assets/organisations.html"))
+    tmpl.Execute(w,nil)
+}

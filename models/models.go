@@ -56,6 +56,7 @@ func CreateTables() error{
 	orgId int not null, 
 	foreign key (userId) references users(userId), 
 	foreign key (orgId) references organisations(orgId),
+    unique (userId, orgId),
 	primary key (userOrgId))`
     _,err = DB.ExecContext(ctx,userOrgQuery)
     if err!= nil {

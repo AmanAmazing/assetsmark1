@@ -73,8 +73,10 @@ func main() {
 
         r.Get("/admin", func(w http.ResponseWriter, r *http.Request){
             _, claims, _ := jwtauth.FromContext(r.Context())
-            w.Write([]byte(fmt.Sprint("protected area. Hi",claims["email"])))
+            w.Write([]byte(fmt.Sprint("protected area. Hi ",claims["id"])))
         })
+        
+        r.Get("/organisations",handlers.Organisations)
     })
     log.Fatal(http.ListenAndServe(":3000", r))
 }
