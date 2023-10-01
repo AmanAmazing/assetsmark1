@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/AmanAmazing/assetsMark1/helper"
 	"github.com/AmanAmazing/assetsMark1/models"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
 )
 
@@ -169,4 +171,10 @@ func OrganisationAdd(w http.ResponseWriter, r *http.Request){
    tmpl := template.Must(template.ParseFiles("assets/organisations.html"))
    tmpl.ExecuteTemplate(w, "org-list-element",org) 
 
+}
+
+
+func Organisation(w http.ResponseWriter,r *http.Request){
+    id := chi.URLParam(r, "id")
+    w.Write([]byte(fmt.Sprintf("This is your id: %s",id)))
 }

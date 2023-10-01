@@ -78,6 +78,8 @@ func main() {
         
         r.Get("/organisations",handlers.Organisations)
         r.Post("/OrganisationAdd",handlers.OrganisationAdd)
+
+        r.Get("/organisations/{id}",handlers.Organisation)
     })
     log.Fatal(http.ListenAndServe(":3000", r))
 }

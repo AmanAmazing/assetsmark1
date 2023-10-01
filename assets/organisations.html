@@ -18,7 +18,7 @@
         <ul id="org-list">
         {{ range .organisations}}
             {{ block "org-list-element" .}}
-            <li>{{.Id}} - {{.Name}}</li>
+            <li id="{{.Id}}"><a href="organisations/{{.Id}}">{{.Name}}</a></li>
             {{ end }}
         {{ end }}
         </ul>
