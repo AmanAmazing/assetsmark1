@@ -92,7 +92,7 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
         Value: tokenString,
     })
 
-    http.Redirect(w,r, "/admin",http.StatusSeeOther)
+    http.Redirect(w,r, "/organisations",http.StatusSeeOther)
 
 }
 
