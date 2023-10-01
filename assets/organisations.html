@@ -3,18 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/htmx.org@1.9.6" integrity="sha384-FhXw7b6AlE/jyjlZH5iHa/tTe9EpJ1Y55RjcgPbjeWMskSxZt1v9qkxLJWNJaGni" crossorigin="anonymous"></script>
     <title>Organisations</title>
 </head>
 <body>
     <h1>Select your organisation</h1> 
     <br>
     <h2>Add new organisation to list</h2>
-    <form action="/addOrganisation" method="post">
+    <form hx-post="/OrganisationAdd" hx-target="#org-list" hx-swap="beforeend">
     
         <label for="organisationName">Name:</label>
         <input type="text" placeholder="Enter your organisation name" name="organisationName" required>
-
         <button type="submit">Create Org</button>
+        <ul id="org-list">
+        {{ range .organisations}}
+            {{ block "org-list-element" .}}
+            <li>{{.Id}} - {{.Name}}</li>
+            {{ end }}
+        {{ end }}
+        </ul>
     </form>
 </body>
 </html>

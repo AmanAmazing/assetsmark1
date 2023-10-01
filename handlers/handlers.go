@@ -9,6 +9,7 @@ import (
 
 	"github.com/AmanAmazing/assetsMark1/helper"
 	"github.com/AmanAmazing/assetsMark1/models"
+	"github.com/go-chi/jwtauth"
 )
 
 func HelloWorld(w http.ResponseWriter,r *http.Request){
@@ -95,6 +96,77 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
 
 
 func Organisations(w http.ResponseWriter, r *http.Request){
+    // fetching all the orgs the user has 
+    var orgs []models.Organisation
+    _,claims,_ := jwtauth.FromContext(r.Context())
+    userOrgQuery := `SELECT orgId FROM userOrgs WHERE userId=$1`
+    orgQuery := `SELECT * FROM organisations WHERE orgId=$1`
+    rows, err := models.DB.Query(userOrgQuery,claims["id"])
+    if err != nil {
+        w.WriteHeader(http.StatusBadRequest)
+        return
+    } 
+    defer rows.Close()
+    for rows.Next() {
+        var orgId int 
+        err = rows.Scan(&orgId)
+        if err != nil {
+            w.WriteHeader(http.StatusTeapot)
+            return
+        }
+        
+        // fetching orgs from the database
+        tempOrg := models.Organisation{}
+        row := models.DB.QueryRow(orgQuery,orgId)
+        err = row.Scan(&tempOrg.Id,&tempOrg.Name)
+        switch err {
+        case sql.ErrNoRows:
+            w.WriteHeader(http.StatusBadRequest)
+            return
+        case nil:
+            orgs = append(orgs, tempOrg)
+        default: 
+            w.WriteHeader(http.StatusBadRequest)
+            return
+        }
+    }
+    // get any error encountered during iteration 
+    err = rows.Err()
+    if err != nil {
+        w.WriteHeader(http.StatusTeapot)
+    }
     tmpl := template.Must(template.ParseFiles("assets/organisations.html"))
-    tmpl.Execute(w,nil)
+    orgsList := map[string][]models.Organisation{
+        "organisations":orgs,
+    }
+    tmpl.Execute(w,orgsList)
+}
+
+func OrganisationAdd(w http.ResponseWriter, r *http.Request){
+    // getting variables from form and assigning them to struct
+    org:=  models.Organisation{} 
+    org.Name = r.FormValue("organisationName") 
+
+   // getting user id from jwt token 
+   _, claims, _ := jwtauth.FromContext(r.Context()) // need to implement error                                                                                                                         
+    
+   // inserting into organisations table
+   orgInsert := `INSERT INTO organisations(orgName) VALUES ($1) RETURNING orgId`
+   err := models.DB.QueryRow(orgInsert,org.Name).Scan(&org.Id)
+   if err != nil { 
+       w.WriteHeader(http.StatusBadRequest) 
+       return
+   }
+   // inserting into userOrgs 
+   userOrgInsert := `INSERT INTO userOrgs(userId,orgId) VALUES ($1,$2)`
+   _,err = models.DB.Exec(userOrgInsert,claims["id"],org.Id)
+   if err != nil { 
+       w.WriteHeader(http.StatusBadRequest) 
+       return
+   }
+
+   // htmxing it onto the page 
+   tmpl := template.Must(template.ParseFiles("assets/organisations.html"))
+   tmpl.ExecuteTemplate(w, "org-list-element",org) 
+
 }

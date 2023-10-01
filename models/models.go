@@ -13,12 +13,24 @@ var DB *sql.DB
 var TokenAuth *jwtauth.JWTAuth
 
 type User struct {
+    Id int `json:"id"`
 	FirstName string `json:"firstName"`
 	Surname   string `json:"surname"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
-    CreatedAt time.Time 
-    EditedAt  time.Time 
+    CreatedAt time.Time `json:"createdAt"` 
+    EditedAt  time.Time `json:"editedAt"`
+}
+
+type Organisation struct{
+    Id int `json:"orgId"`
+    Name string `json:"orgName"`
+}
+
+type UserOrg struct {
+    Id int `json:"id"` 
+    UserId int `json:"userId"`
+    OrgId int `json:"orgId"`
 }
 
 func CreateTables() error{
@@ -42,7 +54,7 @@ func CreateTables() error{
 
 
     orgQuery := `create table if not exists organisations(
-	orgId serial  not null, 
+	orgId serial, 
 	orgName varchar(255) not null, 
 	primary key (orgId) )`
     _,err = DB.ExecContext(ctx,orgQuery)
@@ -51,7 +63,7 @@ func CreateTables() error{
     }
     
     userOrgQuery := `create table if not exists userOrgs (
-	userOrgId serial not null, 
+	userOrgId serial, 
 	userId int not null, 
 	orgId int not null, 
 	foreign key (userId) references users(userId), 

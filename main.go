@@ -77,6 +77,7 @@ func main() {
         })
         
         r.Get("/organisations",handlers.Organisations)
+        r.Post("/OrganisationAdd",handlers.OrganisationAdd)
     })
     log.Fatal(http.ListenAndServe(":3000", r))
 }
