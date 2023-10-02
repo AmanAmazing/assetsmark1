@@ -46,8 +46,7 @@ func SignUpPost(w http.ResponseWriter,r *http.Request){
             w.Write([]byte("Failed to post user to db"))
             return
         }
-        w.WriteHeader(http.StatusCreated) 
-        w.Write([]byte("User was created successfully"))
+        http.Redirect(w, r,"/login",http.StatusSeeOther)
         return
     case nil:
         w.Write([]byte("User already has an account"))
@@ -93,7 +92,6 @@ func LoginPost(w http.ResponseWriter, r *http.Request){
     })
 
     http.Redirect(w,r, "/organisations",http.StatusSeeOther)
-
 }
 
 
